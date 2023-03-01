@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PhilmFindurzz</title>
+    </head>
+    <body>
+        <h1>FilmFindurzz</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <textarea type="text" id="messageText" autocomplete="off" rows=8, cols=15></textarea>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <table id='progress'></table>
+        <table id='ratings'><tr class='rate-header'><th>Name</th></tr></table>
+        <br>
+        <input type='text' id='filter' onkeyup='filter_recs()' placeholder="Filter plots" size=40>
+        <input type='text' id='filter-genres' onkeyup='filter_recs()' placeholder="Filter genres (separate w/ commas)" size=40>
+        <input type='text' id='filter-keywords' onkeyup='filter_recs()' placeholder="Filter keywords (separate w/ commas)" size=40>
+        <br>
+        <div id='recommendations'></div>
+        <script>
+            //function createWS(){
+                var ws = new WebSocket(`ws://${document.location.host}/ws`);
+                var prevFlag = '';
+                var tableAr = []
+                ws.onmessage = function(event) {
+                    if(event.data.startsWith('FLAG|')){
+                        prevFlag = event.data.split('|')[1]
+                    }else{
+                        if(event.data.startsWith('[{')){
+                            //console.log(event.data)
+                            js = JSON.parse(event.data)
+                            var rec = document.getElementById('recommendations')
+                            if(js[0].hasOwnProperty('voters')){ //update existing entry
+                                //uid|username|rid|rtitle
+                                var rcont = rec.getElementsByClassName(js[0].tt)[0].getElementsByClassName('reviews')[0]
+                                rec.getElementsByClassName('vnum')[0].innerText = ` (num o' votes: ${js[0].voters.length})`
+                                for(var i = 0;i<js[0].voters.length;i++){
+                                    if(rcont.getElementsByClassName(js[0].voters[i][0]).length == 0){
+                                        var rw = document.createElement('div')
+                                        rw.className = js[0].voters[i][0]
+                                        var name = document.createElement('a')
+                                        name.href = `https://imdb.com/user/${js[0].voters[i]}/`
+                                        name.innerText = js[0].voters[i][1]
+                                        var rtitle = document.createElement('a')
+                                        rtitle.href = `https://imdb.com/review/${js[0].voters[i][2]}/`
+                                        rtitle.innerText = js[0].voters[i][3]
+                                        var sep = document.createElement('span')
+                                        sep.innerText = ' - '
+                                        rw.append(name)
+                                        rw.append(sep)
+                                        rw.append(rtitle)
+                                        rcont.append(rw)
+                                    }
+                                }
+                            }else{
+                                if(rec.getElementsByClassName(js[0].tt).length == 0){
+                                    var d = document.createElement('div')
+                                    d.className = js[0].tt
+                                    d.setAttribute('numvotes', js[1].voters.length)
+                                    var header = document.createElement('div')
+                                    header.className = 'header.' + js[0].tt
+                                    var h3 = document.createElement('h3')
+                                    var tthref = document.createElement('a')
+                                    tthref.href = `https://imdb.com/title/${js[0].tt}/`
+                                    tthref.innerText = js[0].title
+                                    h3.append(tthref)
+                                    var vnum = document.createElement('span')
+                                    vnum.className = 'vnum'
+                                    vnum.innerText = ` (num o' votes: ${js[1].voters.length})`
+                                    var seen = document.createElement('button')
+                                    seen.className = 'seenbutton.' + js[0].tt
+                                    seen.innerHTML = 'seen'
+                                    seen.addEventListener('click', function(e) {
+                                        sendRawMessage('SEEN|' + e.target.className.split('.')[1])
+                                        if(e.target.innerText == 'seen'){
+                                            e.target.innerText = 'marked'
+                                        }
+                                        e.preventDefault()
+                                    });
+                                    header.append(h3)
+                                    header.append(seen)
+                                    header.append(vnum)
+                                    d.append(header)
+                                    var plot = document.createElement('div')
+                                    plot.innerText = js[0].plot
+                                    d.append(plot)
+                                    var rcont = document.createElement('div')
+                                    rcont.className = 'reviews'
+                                    for(var i = 0;i<js[1].voters.length;i++){
+                                        var rw = document.createElement('div')
+                                        rw.className = js[1].voters[i][0]
+                                        var name = document.createElement('a')
+                                        name.href = `https://imdb.com/user/${js[1].voters[i][0]}/`
+                                        name.innerText = js[1].voters[i][1]
+                                        var rtitle = document.createElement('a')
+                                        rtitle.href = `https://imdb.com/review/${js[1].voters[i][2]}/`
+                                        rtitle.innerText = js[1].voters[i][3]
+                                        var sep = document.createElement('span')
+                                        sep.innerText = ' - '
+                                        rw.append(name)
+                                        rw.append(sep)
+                                        rw.append(rtitle)
+                                        rcont.append(rw)
+                                    }
+                                    d.append(rcont)
+                                    var details = document.createElement('details')
+                                    var summary = document.createElement('summary')
+                                    summary.innerText = 'Show keywords'
+                                    details.append(summary)
+                                    var kw = document.createElement('p')
+                                    kw.className = 'keywords'
+                                    kw.innerText = 'keywords: ' + js[0].keywords.join(', ')
+                                    details.append(kw)
+                                    d.append(details)
+                                    var genres = document.createElement('div')
+                                    genres.className = 'genres'
+                                    genres.innerText = 'genres: ' + js[0].genres.join(', ')
+                                    d.append(genres)
+                                    rec.append(d)
+                                }
+                            }
+                        }else if(prevFlag == 'tableinit'){
+                            var prog = document.getElementById('progress')
+                            var row = document.createElement('tr')
+                            var parts = event.data.split('\t')
+                            row.setAttribute('class', parts[0])
+                            for(var i = 0;i<parts.length;i++){
+                                var cell = document.createElement('td')
+                                cell.innerHTML = parts[i]
+                                row.append(cell)
+                            }
+                            var span = document.createElement('span')
+                            span.setAttribute('class', 'count_update')
+                            row.children[2].prepend(span)
+                            prog.append(row)
+                        }else if(prevFlag == 'rcount_update'){
+                            console.log(event.data)
+                            var parts = event.data.split(',')
+                            var prog = document.getElementById('progress')
+                            var row = prog.getElementsByClassName(parts[0])[0]
+                            row.getElementsByClassName('count_update')[0].innerHTML = parts[1] + '/'
+                        }else if(prevFlag == 'rate_table'){
+                            //tt|title|uid|uname|rid|rating|added(True/False)
+                            console.log(event.data)
+                            var prog = document.getElementById('ratings')
+                            var parts = event.data.split('|')
+                            var add_user = typeof(prog.getElementsByClassName(parts[2])[0]) == 'undefined'
+                            if(add_user){ //for name of row. link user profile
+                                var row = document.createElement('tr')
+                                row.setAttribute('class', parts[2])
+                                var name = document.createElement('td')
+                                var a = document.createElement('a')
+                                a.href = `https://imdb.com/user/${parts[2]}/`
+                                a.innerText = parts[3]
+                                var b = document.createElement('button')
+                                b.className = 'urbutton.' + parts[2]
+                                b.innerHTML = parts[6] == 'True' ? 'added' : 'add'
+                                b.addEventListener('click', function(e) {
+                                    if(e.target.innerText == 'add'){
+                                        sendRawMessage('ADD|' + e.target.className.split('.')[1]);
+                                        e.target.innerText = 'added'
+                                    }else{
+                                        sendRawMessage('RM|' + e.target.className.split('.')[1])
+                                        e.target.innerText = 'add'
+                                    }
+                                    e.preventDefault()
+                                });
+                                name.append(a)
+                                name.append(b)
+                                row.append(name)
+                                var header = prog.getElementsByClassName('rate-header')[0]
+                                var ar = header.getElementsByTagName('th')
+                                if(ar.length > 1){
+                                    for(var i = 1;i<ar.length;i++){
+                                        var cell = document.createElement('td')
+                                        cell.setAttribute('class', ar[i].className)
+                                        var a = document.createElement('a')
+                                        cell.append(a)
+                                        row.append(cell)
+                                    }
+                                }
+                                prog.append(row)
+                            }
+                            if(typeof(prog.getElementsByClassName(parts[0])[0]) == 'undefined'){ //if undefined. for name of column
+                                var title = document.createElement('th')
+                                var a = document.createElement('a')
+                                a.href = `https://imdb.com/title/${parts[0]}/`
+                                a.innerText = parts[1]
+                                title.setAttribute('class', parts[0])
+                                title.append(a)
+                                prog.getElementsByClassName('rate-header')[0].append(title)
+                                var ar = prog.getElementsByTagName('tr')
+                                for(var i = 1;i<ar.length;i++){
+                                    var cell = document.createElement('td')
+                                    cell.setAttribute('class', parts[0])
+                                    var a = document.createElement('a')
+                                    cell.append(a)
+                                    ar[i].append(cell)
+                                }
+                            }
+                            if(prog.getElementsByClassName(parts[2])[0].getElementsByClassName(parts[0]).length > 0){
+                                prog.getElementsByClassName(parts[2])[0].getElementsByClassName(parts[0])[0].setAttribute('class', parts[4])
+                                var a = prog.getElementsByClassName(parts[2])[0].getElementsByClassName(parts[4])[0].getElementsByTagName('a')[0]
+                                a.href = `https://imdb.com/review/${parts[4]}/`
+                                a.innerText = parts[5]
+                                prog.getElementsByClassName(parts[2])[0].getElementsByClassName(parts[4])[0].append(a)
+                            }
+                            //create cell for rating and add to correct column and row
+                        }else if(prevFlag == 'reorg_rate_tab'){
+                            //ulinks (rows) in order of most movies from set rated
+                            console.log(event.data)
+                            var prog = document.getElementById('ratings')
+                            var trs = prog.getElementsByTagName('tr')
+                            var tableAr = []
+                            var head = prog.getElementsByClassName('rate-header')[0].getElementsByTagName('th')
+                            for(var i = 1;i<trs.length;i++){ //get header first
+                                var tds = trs[i].getElementsByTagName('td')
+                                var d = {'name': tds[0].getElementsByTagName('a')[0].innerText, 'uid': trs[i].className, 'added': tds[0].getElementsByTagName('button')[0].innerText == 'added'}
+                                var c = 0
+                                for(var n = 1;n<head.length;n++){
+                                    var cell = tds[n]
+                                    if(cell.innerText.length > 0){
+                                        c++
+                                    }
+                                    var k = head[n].className
+                                    d[k] = [cell.className, cell.innerText]
+                                }
+                                d.total = c
+                                tableAr.push(d)
+                            }
+                            tableAr.sort(function(a,b) {
+                                return b.total - a.total
+                            });
+                            for(var i = 0;i<tableAr.length;i++){
+                                var data = tableAr[i]
+                                var row = trs[i+1]
+                                var cells = row.getElementsByTagName('td')
+                                row.className = data.uid
+                                var a = cells[0].getElementsByTagName('a')[0]
+                                a.href = `https://imdb.com/user/${data.uid}/`
+                                a.innerText = data.name
+                                var b = cells[0].getElementsByTagName('button')[0]
+                                b.className = `urbutton.${data.uid}`
+                                b.innerText = data.added ? 'added' : 'add'
+                                for(var n = 1;n<cells.length;n++){
+                                    var cell = cells[n]
+                                    var review = data[head[n].className]
+                                    cell.className = review[0]
+                                    var a = cell.getElementsByTagName('a')[0]
+                                    a.href = `https://imdb.com/review/${review[0]}/`
+                                    a.innerText = review[1]
+                                }
+                            }
+                            console.log('done')
+                        }else if(prevFlag == 'err'){
+                            console.log(event.data)
+                        }
+                    }
+                }
+            function sendMessage(event) {
+                // if ws.readyState == ws.CLOSED:
+                //     ws = new WebSocket("ws://localhost:8000/ws");
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            };
+            function sendRawMessage(msg){
+                //if closed: reopen
+                // if ws.readyState == ws.CLOSED:
+                //     ws = new WebSocket("ws://localhost:8000/ws");
+                ws.send(msg)
+                //return ws.readyState !== ws.CLOSED
+            }
+            function clicked(obj){
+                if(obj.innerText == 'ADD|add'){
+                    if(sendRawMessage(obj.className.split('.')[1]))
+                        obj.innerText = 'added'
+                }else{
+                    if(sendRawMessage('RM|' + obj.className.split('.')[1]))
+                        obj.innerText = 'add'
+                }
+            }
+
+            let subset = (against, target) => target.every(v => against.includes(v));
+
+            let strcontains = (checkarray, str) => checkarray.every(v => str.includes(v));
+
+            function filter_recs() {
+                let pinput, ginput, kinput, p, g, k, pvalue, gvalue, kvalue;
+                pinput = document.getElementById('filter');
+                var plottext = pinput.value.toUpperCase();
+                ginput = document.getElementById('filter-genres');
+                var gtext = ginput.value.toUpperCase()
+                kinput = document.getElementById('filter-keywords');
+                var ktext = kinput.value.toUpperCase()
+                recs = document.getElementById('recommendations').children;
+                for (i = 0; i < recs.length; i++) {
+                    var pcheck, gcheck, kcheck;
+                    pcheck = gcheck = kcheck = true;
+
+                    //plot filter
+                    p = recs[i].getElementsByTagName('div')[1];
+                    pvalue = p.textContent || p.innerText;
+                    pcheck = pvalue.toUpperCase().indexOf(plottext) > -1;
+
+                    //genre filter
+                    if(gtext.length > 0){
+                        gvalue = recs[i].getElementsByClassName('genres')[0].innerText.substring(8).toUpperCase();
+
+                        var checkgenres = gtext.split(',').map(function(x){ return x.trim(); }).map(function(x){ return x.toUpperCase(); });
+                        gcheck = strcontains(checkgenres, gvalue);
+                    }
+
+                    //keyword filter
+                    if(ktext.length > 0){
+                        kvalue = recs[i].getElementsByTagName('details')[0].children[1].innerText.substring(10).toUpperCase();
+
+                        var checkkws = ktext.split(',').map(function(x){ return x.trim(); }).map(function(x){ return x.toUpperCase(); });
+                        kcheck = strcontains(checkkws, kvalue);
+                    }
+                    if (pcheck && gcheck && kcheck) {
+                        recs[i].style.display = '';
+                    } else {
+                        recs[i].style.display = 'none';
+                    }
+                }
+            }
+        </script>
+    </body>
+</html>
