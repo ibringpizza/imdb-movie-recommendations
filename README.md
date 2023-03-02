@@ -21,6 +21,7 @@
 		```
 		sudo apt install postgresql-client-common
 		```
+		You may have to start the postgresql server after installing on your particular distro. Installing with Apt should automatically start the server on the default port 5432.
 
 		Create user. May display error
 		```
