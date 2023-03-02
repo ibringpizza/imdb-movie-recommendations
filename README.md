@@ -13,6 +13,7 @@
 
 ### Setup
 - A database needs to be created to store all of the data collected by the bot.
+- This has only been tested on Python 3.8 and may not work for 3.9+.
 
 - ##### Creating the database
 	- On Linux:
