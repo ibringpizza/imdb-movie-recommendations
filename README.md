@@ -2,6 +2,10 @@
 
 ### Screenshots
 
+![Pasted image 20230301122042](https://user-images.githubusercontent.com/52234395/222295548-243661d7-7212-4f8c-95b2-c471be17f1e2.png)
+
+![Pasted image 20230301113616](https://user-images.githubusercontent.com/52234395/222295517-6023264a-1d8c-4fe5-a84c-e8ea1e73c601.png)
+
 ### Find Recommendations
 - Add IMDB title ids (ex: tt0062622) to the text area on the top of the page. One title id per line. There should be at least two titles so that users who've reviewed both can be compared. Users who've only reviewed one of the movies you add here will not be displayed. More information in Technical Details.
 - Add users you want to get recommendations from by clicking the 'add' button next to their username.
