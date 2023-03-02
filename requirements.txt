@@ -1,0 +1,7 @@
+aiohttp==3.8.1
+beautifulsoup4==4.11.2
+fastapi==0.92.0
+psycopg==3.1.8
+starlette==0.19.1
+ujson==4.3.0
+uvicorn==0.18.2
