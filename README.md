@@ -111,7 +111,7 @@
 - #### Process
 	- Newly added title IDs are sent over the websocket, appended to whatever previous tts were received, and passed to `get_reviews()` in *get_reviews.py*. The `ratings` table is built as reviews are collected and users who meet the minimum reviews requirement are added with their username and ratings.
 - #### Scraping
-	- ###### Responsible Web Scraping
+	- ##### Responsible Web Scraping
 		- While the program is asynchronous, a leaky bucket algorithm is used to keep all requests to IMDB at least 2 seconds apart.
 		- All data required to run the bot is saved locally and minimal subsequent requests are required to collect new reviews.
 	- Currently, the bot only scrapes from a user's reviews page, not their ratings page. Only written reviews are scraped.
