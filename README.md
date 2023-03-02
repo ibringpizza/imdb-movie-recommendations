@@ -105,10 +105,10 @@
 		```
 	- Run app:
 		```
-		python3 run.py
+		python3 app.py
 		```
 
-### Important ****
+### Important
 - Try not to kill the bot while it is gathering reviews for a new title or user. It will not be able to resume scraping without manual assistance. More information in Technical Details.
 - This bot is **only** designed to be run on your local network. It can manage multiple sessions but can slow down.
 - The ratings table generated from your title IDs is not saved with your session and will clear when the page is refreshed.
