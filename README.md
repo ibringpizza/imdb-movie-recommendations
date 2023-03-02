@@ -98,6 +98,15 @@
 			uids varchar[]
 		);
 		```
+- #### Finally, to run:
+	- Install dependencies:
+		```
+		python3 -m pip install -r requirements.txt
+		```
+	- Run app:
+		```
+		python3 run.py
+		```
 
 ### Important ****
 - Try not to kill the bot while it is gathering reviews for a new title or user. It will not be able to resume scraping without manual assistance. More information in Technical Details.
